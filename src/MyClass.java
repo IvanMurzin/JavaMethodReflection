@@ -19,13 +19,15 @@ public class MyClass {
         Map<Integer, Double> a = new HashMap<>();
         return a;
     }
+
+
 }
 
-//interface MySuperInterFace extends Comparable<String>{
-//
-//}
+interface MySuperInterFace extends Comparable<String> {
 
-class A implements Comparable<String> {
+}
+
+class A implements MySuperInterFace {
 
     @Override
     public int compareTo(String o) {
