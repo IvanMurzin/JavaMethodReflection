@@ -3,12 +3,12 @@ import java.lang.reflect.*;
 import java.util.Arrays;
 
 public class Main {
+    static void log() {
+        System.out.println();
+    }
 
-    public static void main(String[] args) throws Exception {
-//        Method method = MyClass.class.getMethod("someMethodCanReturnable");
-//        System.out.println(isSubtype(method.getGenericReturnType(), ReturnableClass.class));
-        Method method = M.class.getMethod("m4");
-        System.out.println(isSubtype(method.getGenericReturnType(), SomeClass.class, null));
+    static void log(Object message) {
+        System.out.println("\u001B[34m" + message + "\u001B[0m");
     }
 
     static Type[] getGenerics(Type type) {
@@ -18,38 +18,48 @@ public class Main {
         return null;
     }
 
+    static Class<?> getClass(Type type) {
+        try {
+            String name = type.toString().replaceAll("<.*>", "").replace("class ", "");
+            return Class.forName(name);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+
+    public static void main(String[] args) throws Exception {
+        Method method = M.class.getMethod("m4");
+        System.out.println(isSubtype(method.getGenericReturnType(), SomeClass.class, null));
+    }
 
     public static boolean isSubtype(Type returnType, Type type, Type[] typeGenerics) {
-        System.out.println();
-        System.out.println("Type:       " + type);
-        System.out.println("Generics:   " + Arrays.toString(typeGenerics));
-        System.out.println("ReturnType: " + returnType);
+        log();
+        log("Type:       " + type);
+        log("Generics:   " + Arrays.toString(typeGenerics));
+        log("ReturnType: " + returnType);
         if (type == returnType || returnType == Object.class) return true;
-        try {
-            String typeName = type.toString().replaceAll("<.*>", "").replace("class ", "");
-            String returnName = returnType.toString().replaceAll("<.*>", "").replace("class ", "");
-            var typeClass = Class.forName(typeName);
-            var returnClass = Class.forName(returnName);
-            if (typeClass != returnClass) {
-                System.out.println("Class:      " + typeClass);
-                var interfacesGenerics = typeClass.getGenericInterfaces();
-                var interfaces = typeClass.getInterfaces();
-                var superClassGeneric = typeClass.getGenericSuperclass();
-                var superClass = typeClass.getSuperclass();
-                System.out.println("Super:      " + superClassGeneric);
-                if (superClass != null && superClass != Object.class && returnClass.isAssignableFrom(superClass)) {
-                    return isSubtype(returnType, superClassGeneric, typeGenerics == null ? getGenerics(type) : typeGenerics);
-                }
-                for (int i = 0; i < interfacesGenerics.length; i++) {
-                    if (returnClass.isAssignableFrom(interfaces[i]))
-                        return isSubtype(returnType, interfacesGenerics[i], typeGenerics == null ? getGenerics(type) : typeGenerics);
-                }
+
+        var typeClass = getClass(type);
+        var returnClass = getClass(returnType);
+
+        if (typeClass != null && returnClass != null && typeClass != returnClass) {
+            log("Class:      " + typeClass);
+            var interfacesGenerics = typeClass.getGenericInterfaces();
+            var interfaces = typeClass.getInterfaces();
+            var superClassGeneric = typeClass.getGenericSuperclass();
+            var superClass = typeClass.getSuperclass();
+            log("Super:      " + superClassGeneric);
+            if (superClass != null && superClass != Object.class && returnClass.isAssignableFrom(superClass)) {
+                return isSubtype(returnType, superClassGeneric, typeGenerics == null ? getGenerics(type) : typeGenerics);
             }
-        } catch (Exception ignored) {
-            System.out.println("Cant cast :" + ignored.getMessage());
+            for (int i = 0; i < interfacesGenerics.length; i++) {
+                if (returnClass.isAssignableFrom(interfaces[i]))
+                    return isSubtype(returnType, interfacesGenerics[i], typeGenerics == null ? getGenerics(type) : typeGenerics);
+            }
         }
 
-        System.out.println("Result:     " + type.getTypeName());
+        log("Result:     " + type.getTypeName());
 
         if (type instanceof ParameterizedType myParameterizedType && returnType instanceof ParameterizedType parameterizedType) {
             var myActualArguments = typeGenerics == null ? myParameterizedType.getActualTypeArguments() : typeGenerics;
@@ -71,29 +81,16 @@ public class Main {
                     if (!isSubtype(typeArgument, myGenericType, getGenerics(myGenericType))) return false;
                 }
             }
-            System.out.println("true");
+            log("true");
             return true;
         }
         try {
-            var returnClass = (Class<?>) returnType;
-            var clazz = (Class<?>) type;
-            return returnClass.isAssignableFrom(clazz);
+            var returnClassCasted = (Class<?>) returnType;
+            var classCasted = (Class<?>) type;
+            return returnClassCasted.isAssignableFrom(classCasted);
         } catch (Exception ignored) {
         }
-        System.out.println("false");
+        log("false");
         return false;
     }
 }
-
-
-//
-//Class<?> superClass = clazz.getSuperclass();
-//        Class<?>[] superInterfaces = clazz.getInterfaces();
-//        if (superClass != Object.class && superClass != null && superClass.isAssignableFrom(clazz)) {
-//            return canReturn(method, superClass);
-//        }
-//        for (Class<?> superInterface : superInterfaces) {
-//            if (superInterface.isAssignableFrom(clazz)) {
-//                return canReturn(method, superInterface);
-//            }
-//        }
